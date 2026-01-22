@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Private Browser</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <input id="url" placeholder="Enter URL or search term" />
+    <button onclick="navigate()">Go</button>
+  </header>
+
+  <webview id="browser" partition="nopersist"></webview>
+
+  <script src="browser.js"></script>
+</body>
+</html>
