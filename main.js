@@ -1,10 +1,13 @@
 const { app, BrowserWindow, session } = require("electron");
 const path = require("path");
+const { blockAds } = require("./privacy/adblock");
+const { hardenFingerprint } = require("./privacy/fingerprint");
+const { enableTor } = require("./privacy/tor");
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1300,
+    height: 900,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       sandbox: true,
@@ -13,25 +16,20 @@ function createWindow() {
     }
   });
 
-  // Privacy-first session settings
-  const ses = session.defaultSession;
+  const ses = session.fromPartition("nopersist");
 
-  ses.setPermissionRequestHandler((_webContents, permission, callback) => {
-    // Deny all permissions by default
-    callback(false);
+  enableTor(ses);
+
+  ses.webRequest.onBeforeRequest(blockAds);
+
+  win.webContents.on("did-finish-load", () => {
+    hardenFingerprint(win.webContents);
   });
 
-  ses.webRequest.onBeforeSendHeaders((details, callback) => {
-    details.requestHeaders["DNT"] = "1";
-    delete details.requestHeaders["Referer"];
-    callback({ requestHeaders: details.requestHeaders });
-  });
+  ses.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
 
   win.loadFile("renderer/index.html");
 }
 
 app.whenReady().then(createWindow);
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
-});
